@@ -1,16 +1,9 @@
 # **Ratatui Fractal Renderer**
 
 A high-performance, multithreaded TUI (Terminal User Interface) fractal explorer written in Rust using \[Ratatui\]. It functions as a tiling window manager for fractal simulations, allowing you to run multiple independent renders of the Mandelbrot and Burning Ship sets simultaneously.
+
 ![coolandsickfractaltui](frac-tui.png)
 
-## **Table of Contents**
-
-* [Features](https://www.google.com/search?q=%23features)
-* [Installation](https://www.google.com/search?q=%23installation)
-* [Controls](https://www.google.com/search?q=%23controls)
-* [Technical Details](https://www.google.com/search?q=%23technical-details)
-* [License](https://www.google.com/search?q=%23license)
-* [Links & Credits](https://www.google.com/search?q=%23links--credits)
 
 ## **Features**
 
