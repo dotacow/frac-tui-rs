@@ -19,7 +19,7 @@ pub fn ui(f: &mut Frame, app: &mut App) {
     let header_text = "Shift+{u,d,l,r}: Split Pane | Shift+x: Close Pane | Tab: Cycle | {1..9}: Switch | r: Reset | Click: Focus | Q: Quit";
 
     let header = Paragraph::new(header_text)
-        .block(Block::default().borders(Borders::ALL).title("Tiling Fractal Manager"))
+        .block(Block::default().borders(Borders::ALL).title("Frac-tui"))
         .style(Style::default().fg(Color::Cyan));
 
     f.render_widget(header, main_layout[0]);

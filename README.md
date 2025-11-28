@@ -1,77 +1,98 @@
-# Ratatui Fractal Renderer
+# **Ratatui Fractal Renderer**
 
-![frac-tui in action.](image.png)
-A high-performance, multithreaded TUI (Terminal User Interface) fractal explorer written in Rust using [Ratatui]. It renders the Mandelbrot and Burning Ship fractals using Braille characters (⣿) to achieve 8× the resolution of standard terminal blocks.
+A high-performance, multithreaded TUI (Terminal User Interface) fractal explorer written in Rust using \[Ratatui\]. It functions as a tiling window manager for fractal simulations, allowing you to run multiple independent renders of the Mandelbrot and Burning Ship sets simultaneously.
+![coolandsickfractaltui](frac-tui.png)
 
-## Table of Contents
-- [Features](#features)
-- [Installation](#installation)
-- [Controls](#controls)
-- [Technical Details](#technical-details)
-- [License](#license)
-- [Links & Credits](#links--credits)
+## **Table of Contents**
 
-## Features
+* [Features](https://www.google.com/search?q=%23features)
+* [Installation](https://www.google.com/search?q=%23installation)
+* [Controls](https://www.google.com/search?q=%23controls)
+* [Technical Details](https://www.google.com/search?q=%23technical-details)
+* [License](https://www.google.com/search?q=%23license)
+* [Links & Credits](https://www.google.com/search?q=%23links--credits)
 
-- **High resolution**: Uses Braille markers (2×4 dots per character) for detailed rendering.
-- **Multithreaded**: Uses `rayon` to compute the fractal in parallel across CPU cores.
-- **Interactive controls**: Smooth panning and zooming (keyboard + mouse).
-- **Dynamic resolution**: Adjusts calculation density when the terminal resizes.
-- **Aspect ratio correction**: Maintains a 1:1 mathematical aspect ratio regardless of terminal window shape.
-- **Multiple fractals**: Toggle between Mandelbrot and Burning Ship.
-- **Color palettes**: Classic, Rainbow, and Magma themes.
+## **Features**
 
-## Installation
+* **Tiling Window Manager**: Split the screen horizontally or vertically (Tmux-style) to view multiple fractals at once.
+* **High resolution**: Uses Braille markers (2×4 dots per character) for detailed rendering.
+* **Multithreaded**: Uses rayon to compute the fractal in parallel across CPU cores.
+* **Independent Simulations**: Each pane has its own state (zoom, position, palette, fractal type, iteration limit).
+* **Interactive controls**: Smooth panning and zooming (keyboard \+ mouse) with mouse focus support.
+* **Dynamic resolution**: Adjusts calculation density automatically when the terminal or pane resizes.
+* **Aspect ratio correction**: Maintains a 1:1 mathematical aspect ratio regardless of pane shape.
+* **Multiple fractals**: Toggle between Mandelbrot and Burning Ship.
+* **Color palettes**: Classic, Rainbow, and Magma themes.
+
+## **Installation**
 
 Ensure you have Rust and Cargo installed. For best performance, build and run in release mode:
 
-```bash
-# Clone the repository
-git clone <repo-url>
+\# Clone the repository
+git clone \<repo-url\>
 cd frac-tui-rs
 
-# Build and run in release mode (recommended)
+\# Build and run in release mode (recommended)
+cargo run \--release
 
-```
+**Note:** Debug builds are significantly slower due to heavy numerical calculations.
 
-Note: Debug builds are significantly slower due to heavy numerical calculations.
+## **Controls**
 
-## Controls
+### **Window Management**
 
-- Arrow keys: Pan the view (Left / Right / Up / Down)
-- Mouse wheel: Zoom in/out relative to cursor position
-- `+` / `-`: Zoom in/out (center-focused)
-- `Space`: Cycle color palettes (Classic → Rainbow → Magma)
-- `b`: Switch fractal mode (Mandelbrot ↔ Burning Ship)
-- `d`: Increase max iterations (more detail)
-- `s`: Decrease max iterations (faster rendering)
-- `r`: Reset view to default
-- `q` / `Esc`: Quit application
+* **Shift \+ U**: Split active pane **Up**
+* **Shift \+ D**: Split active pane **Down**
+* **Shift \+ L**: Split active pane **Left**
+* **Shift \+ R**: Split active pane **Right**
+* **Shift \+ X**: Close active pane
+* **Tab**: Cycle focus between panes
+* **1-9**: Instantly switch focus to pane \#1–9
+* **Mouse Click**: Focus specific pane
 
-## Technical Details
+### **Fractal Navigation (Active Pane)**
 
-### Rendering strategy
+* **Arrow keys**: Pan the view
+* **Mouse wheel**: Zoom in/out relative to cursor
+* **\+ / \-**: Zoom in/out (center-focused)
+* **r**: Reset view to default
 
-The app uses the Ratatui Canvas widget and renders using Braille characters to increase effective resolution. To avoid computing points that are not visible, the renderer calculates the required density from the terminal's physical size:
+### **Simulation Settings**
 
-- Width density: `terminal_width * 2`
-- Height density: `terminal_height * 4`
+* **Space**: Cycle color palettes (Classic → Rainbow → Magma)
+* **b**: Switch fractal mode (Mandelbrot ↔ Burning Ship)
+* **d**: Increase max iterations (more detail)
+* **s**: Decrease max iterations (faster rendering)
 
-### Parallelization
+### **Application**
 
-`rayon` splits the render loop into parallel iterators. Each worker computes a subset of the coordinate grid into thread-local buffers. These buffers are then merged into a final batch to be drawn by the main thread, avoiding mutex contention inside the hot loop.
+* **q / Esc**: Open Quit Confirmation
+* **y / n**: Confirm or Cancel Quit
 
-### Coordinate system and aspect ratio
+## **Technical Details**
 
-Terminal characters are roughly rectangular (≈ 1:2 width:height). The code corrects the mathematical viewport to preserve a 1:1 aspect ratio for the fractal, preventing vertical/horizontal stretching.
+### **Architecture**
 
-## License
+The application uses a **recursive tree structure** (PaneNode) to manage layout. Panes can be leaves (rendering a fractal) or splits (containing children). This allows for infinite nesting of vertical and horizontal splits, similar to multiplexers like Tmux or i3.
 
-Copyright (c) yousef K <ykitaneh22@gmail.com>
+### **Rendering strategy**
 
-This project is licensed under the MIT license. See `LICENSE` for details.
+The app uses the Ratatui Canvas widget and renders using Braille characters. To optimize performance, the renderer calculates the required density based on the specific Rect area of the active pane:
 
-## Links & Credits
+* Width density: pane\_width \* 2
+* Height density: pane\_height \* 4
 
-- Ratatui: https://ratatui.rs
-- Simple template used as a starting point: https://github.com/ratatui/templates/tree/main/simple
+### **Parallelization**
+
+rayon is used to parallelize the pixel calculation. Each worker computes a subset of the coordinate grid into thread-local buffers using a map-reduce pattern. These buffers are merged into a final batch for drawing, ensuring the UI remains responsive even at high iteration depths.
+
+## **License**
+
+Copyright (c) yousef K [ykitaneh22@gmail.com](mailto:ykitaneh22@gmail.com)
+
+This project is licensed under the MIT license. See LICENSE for details.
+
+## **Links & Credits**
+
+* Ratatui: https://ratatui.rs
+* Simple template used as a starting point: https://github.com/ratatui/templates/tree/main/simple
