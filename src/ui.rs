@@ -24,9 +24,8 @@ pub fn ui(f: &mut Frame, app: &mut App) {
 
     f.render_widget(header, main_layout[0]);
 
-
-    draw_tree(f, &mut app.root, main_layout[1], app.active_pane_id);
-
+    let mut pane_counter = 1;
+    draw_tree(f, &mut app.root, main_layout[1], app.active_pane_id, &mut pane_counter);
 
     if app.show_quit_popup {
         let popup_area = centered_rect(60, 20, f.area());
@@ -66,7 +65,7 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         .split(popup_layout[1])[1]
 }
 
-fn draw_tree(f: &mut Frame, node: &mut PaneNode, area: Rect, active_id: usize) {
+fn draw_tree(f: &mut Frame, node: &mut PaneNode, area: Rect, active_id: usize, pane_counter: &mut usize) {
     match node {
         PaneNode::Pane(pane) => {
             pane.area = area;
@@ -103,7 +102,10 @@ fn draw_tree(f: &mut Frame, node: &mut PaneNode, area: Rect, active_id: usize) {
             let p_type = pane.fractal_type;
             let p_iters = pane.max_iters;
 
-            let title = format!("{}: [{:?}, {}, {:?}]", pane.id + 1, p_type, p_iters, p_palette);
+            let display_id = *pane_counter;
+            *pane_counter += 1;
+
+            let title = format!("{}: [{:?}, {}, {:?}]", display_id, p_type, p_iters, p_palette);
 
             let canvas = Canvas::default()
                 .block(
@@ -136,7 +138,7 @@ fn draw_tree(f: &mut Frame, node: &mut PaneNode, area: Rect, active_id: usize) {
 
             for (i, child) in children.iter_mut().enumerate() {
                 if i < chunks.len() {
-                    draw_tree(f, child, chunks[i], active_id);
+                    draw_tree(f, child, chunks[i], active_id, pane_counter);
                 }
             }
         }

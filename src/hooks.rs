@@ -328,6 +328,7 @@ impl App {
     pub fn handle_event(&mut self, event: Event) {
         match event {
             Event::Key(key) if key.kind == KeyEventKind::Press => {
+                // INTERCEPT INPUT FOR POPUP
                 if self.show_quit_popup {
                     match key.code {
                         KeyCode::Char('y') | KeyCode::Char('Y') => {
@@ -344,9 +345,14 @@ impl App {
                 if let KeyCode::Char(c) = key.code {
                     if let Some(digit) = c.to_digit(10) {
                         if digit > 0 {
-                            let target_id = (digit - 1) as usize;
-                            if self.pane_exists(target_id) {
-                                self.active_pane_id = target_id;
+                            let index = (digit - 1) as usize;
+                            // Collect IDs in visual order
+                            let mut ids = Vec::new();
+                            Self::collect_ids(&self.root, &mut ids);
+
+                            // Map index (1st, 2nd...) to actual ID
+                            if index < ids.len() {
+                                self.active_pane_id = ids[index];
                             }
                             return;
                         }
@@ -368,7 +374,6 @@ impl App {
                 if self.show_quit_popup { return; }
 
                 if let Some(id) = self.find_pane_at(mouse.column, mouse.row) {
-
                     match mouse.kind {
                         MouseEventKind::Down(_) | MouseEventKind::ScrollDown | MouseEventKind::ScrollUp => {
                             self.active_pane_id = id;
