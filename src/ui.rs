@@ -2,7 +2,7 @@ use ratatui::{
     prelude::*,
     symbols::Marker,
     widgets::canvas::Canvas,
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Clear},
 };
 use crate::hooks::{App, PaneNode};
 use crate::render::draw_fractal;
@@ -24,7 +24,46 @@ pub fn ui(f: &mut Frame, app: &mut App) {
 
     f.render_widget(header, main_layout[0]);
 
+
     draw_tree(f, &mut app.root, main_layout[1], app.active_pane_id);
+
+
+    if app.show_quit_popup {
+        let popup_area = centered_rect(60, 20, f.area());
+
+        let popup_block = Paragraph::new("Are you sure you want to quit?\n\n(y) Yes / (n) No")
+            .block(
+                Block::default()
+                    .title(" Warning ")
+                    .borders(Borders::ALL)
+                    .style(Style::default().bg(Color::Black).fg(Color::Red))
+            )
+            .alignment(Alignment::Center);
+
+
+        f.render_widget(Clear, popup_area);
+        f.render_widget(popup_block, popup_area);
+    }
+}
+
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
+
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(popup_layout[1])[1]
 }
 
 fn draw_tree(f: &mut Frame, node: &mut PaneNode, area: Rect, active_id: usize) {

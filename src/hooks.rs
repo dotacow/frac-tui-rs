@@ -2,6 +2,8 @@ use crossterm::event::{Event, KeyCode, KeyEventKind, MouseEvent, MouseEventKind}
 use ratatui::layout::{Rect, Direction};
 use crate::color::Palette;
 
+const  MAX_ITER_DEFAULT: u32 = 1100;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum FractalType {
     Mandelbrot,
@@ -29,7 +31,7 @@ impl FractalPane {
             scale: 3.0,
             palette: Palette::Classic,
             fractal_type: FractalType::Mandelbrot,
-            max_iters: 112,
+            max_iters: MAX_ITER_DEFAULT,
             area: Rect::default(),
         }
     }
@@ -49,7 +51,7 @@ impl FractalPane {
                 self.center_x = -0.75;
                 self.center_y = 0.0;
                 self.scale = 3.0;
-                self.max_iters = 112;
+                self.max_iters = MAX_ITER_DEFAULT;
             }
             KeyCode::Char(' ') => self.toggle_palette(),
             KeyCode::Char('b') => self.toggle_fractal_type(),
@@ -126,6 +128,7 @@ pub struct App {
     pub active_pane_id: usize,
     pub next_id: usize,
     pub should_quit: bool,
+    pub show_quit_popup: bool,
 }
 
 impl App {
@@ -135,6 +138,7 @@ impl App {
             active_pane_id: 0,
             next_id: 1,
             should_quit: false,
+            show_quit_popup: false,
         }
     }
 
@@ -271,6 +275,23 @@ impl App {
     pub fn handle_event(&mut self, event: Event) {
         match event {
             Event::Key(key) if key.kind == KeyEventKind::Press => {
+
+
+                if self.show_quit_popup {
+                    match key.code {
+                        KeyCode::Char('y') | KeyCode::Char('Y') => {
+                            self.should_quit = true;
+                        },
+                        KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+                            self.show_quit_popup = false;
+                        }
+                        _ => {}
+                    }
+
+                    return;
+                }
+
+
                 if let KeyCode::Char(c) = key.code {
                     if let Some(digit) = c.to_digit(10) {
                         if digit > 0 {
@@ -284,7 +305,7 @@ impl App {
                 }
 
                 match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => self.should_quit = true,
+                    KeyCode::Char('q') | KeyCode::Esc => self.show_quit_popup = true,
                     KeyCode::Char('D') => self.split_active(Direction::Vertical, false),
                     KeyCode::Char('U') => self.split_active(Direction::Vertical, true),
                     KeyCode::Char('R') => self.split_active(Direction::Horizontal, false),
@@ -294,6 +315,9 @@ impl App {
                 }
             }
             Event::Mouse(mouse) => {
+
+                if self.show_quit_popup { return; }
+
                 if let Some(id) = self.find_pane_at(mouse.column, mouse.row) {
                     match mouse.kind {
                         MouseEventKind::Down(_) | MouseEventKind::ScrollDown | MouseEventKind::ScrollUp => {
@@ -301,7 +325,6 @@ impl App {
                         }
                         _ => {}
                     }
-
                     self.pass_mouse_to_active(mouse);
                 }
             }
