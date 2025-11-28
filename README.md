@@ -4,7 +4,7 @@ A high-performance, multithreaded TUI (Terminal User Interface) fractal explorer
 
 ![coolandsickfractaltui](frac-tui.png)
 
-
+![secondcoolfractal](ex2.png) ![ex3](ex3.png)
 ## **Features**
 
 * **Tiling Window Manager**: Split the screen horizontally or vertically (Tmux-style) to view multiple fractals at once.
