@@ -2,7 +2,7 @@ use crossterm::event::{Event, KeyCode, KeyEventKind, MouseEvent, MouseEventKind}
 use ratatui::layout::{Rect, Direction};
 use crate::color::Palette;
 
-const  MAX_ITER_DEFAULT: u32 = 1100;
+const MAX_ITER_DEFAULT: u32 = 1100;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum FractalType {
@@ -201,6 +201,59 @@ impl App {
         }
     }
 
+    fn recursive_delete(node: &mut PaneNode, target_id: usize) -> bool {
+        match node {
+            PaneNode::Pane(_) => false,
+            PaneNode::Split { children, .. } => {
+                if let Some(pos) = children.iter().position(|child| match child {
+                    PaneNode::Pane(p) => p.id == target_id,
+                    _ => false
+                }) {
+                    children.remove(pos);
+                    true
+                } else {
+                    let mut deleted = false;
+                    for child in children.iter_mut() {
+                        if Self::recursive_delete(child, target_id) {
+                            deleted = true;
+                            if let PaneNode::Split { children: sub_children, .. } = child {
+                                if sub_children.len() == 1 {
+                                    *child = sub_children.pop().unwrap();
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    deleted
+                }
+            }
+        }
+    }
+
+    fn close_active(&mut self) {
+        let mut ids = Vec::new();
+        Self::collect_ids(&self.root, &mut ids);
+        if ids.len() <= 1 {
+            return;
+        }
+
+        if Self::recursive_delete(&mut self.root, self.active_pane_id) {
+            if let PaneNode::Split { children, .. } = &mut self.root {
+                if children.len() == 1 {
+                    self.root = children.pop().unwrap();
+                }
+            }
+        }
+
+        if !self.pane_exists(self.active_pane_id) {
+            let mut new_ids = Vec::new();
+            Self::collect_ids(&self.root, &mut new_ids);
+            if let Some(&last_id) = new_ids.last() {
+                self.active_pane_id = last_id;
+            }
+        }
+    }
+
     fn cycle_focus(&mut self) {
         let mut ids = Vec::new();
         Self::collect_ids(&self.root, &mut ids);
@@ -275,8 +328,6 @@ impl App {
     pub fn handle_event(&mut self, event: Event) {
         match event {
             Event::Key(key) if key.kind == KeyEventKind::Press => {
-
-
                 if self.show_quit_popup {
                     match key.code {
                         KeyCode::Char('y') | KeyCode::Char('Y') => {
@@ -287,10 +338,8 @@ impl App {
                         }
                         _ => {}
                     }
-
                     return;
                 }
-
 
                 if let KeyCode::Char(c) = key.code {
                     if let Some(digit) = c.to_digit(10) {
@@ -310,21 +359,23 @@ impl App {
                     KeyCode::Char('U') => self.split_active(Direction::Vertical, true),
                     KeyCode::Char('R') => self.split_active(Direction::Horizontal, false),
                     KeyCode::Char('L') => self.split_active(Direction::Horizontal, true),
+                    KeyCode::Char('X') => self.close_active(),
                     KeyCode::Tab => self.cycle_focus(),
                     _ => self.send_key_to_active(key.code),
                 }
             }
             Event::Mouse(mouse) => {
-
                 if self.show_quit_popup { return; }
 
                 if let Some(id) = self.find_pane_at(mouse.column, mouse.row) {
+
                     match mouse.kind {
                         MouseEventKind::Down(_) | MouseEventKind::ScrollDown | MouseEventKind::ScrollUp => {
                             self.active_pane_id = id;
                         }
                         _ => {}
                     }
+
                     self.pass_mouse_to_active(mouse);
                 }
             }

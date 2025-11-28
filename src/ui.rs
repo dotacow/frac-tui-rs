@@ -16,7 +16,7 @@ pub fn ui(f: &mut Frame, app: &mut App) {
         ])
         .split(f.area());
 
-    let header_text = "Shift+{u,d,l,r}: Split Pane | Tab: Cycle | {1..9}: Switch | r: Reset | Click: Focus | Q: Quit";
+    let header_text = "Shift+{u,d,l,r}: Split Pane | Shift+x: Close Pane | Tab: Cycle | {1..9}: Switch | r: Reset | Click: Focus | Q: Quit";
 
     let header = Paragraph::new(header_text)
         .block(Block::default().borders(Borders::ALL).title("Tiling Fractal Manager"))
