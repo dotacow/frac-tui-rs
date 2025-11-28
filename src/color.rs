@@ -1,6 +1,6 @@
 use ratatui::style::Color;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Palette {
     Classic,
     Rainbow,
@@ -34,24 +34,12 @@ pub fn get_palette_colors(palette: Palette) -> Vec<Color> {
             Color::LightRed,
         ],
         Palette::Magma => vec![
-            from_hex(0x030412), // NIGHT_BLUE
-            from_hex(0xD95269), // LIGHT_PINK
-            from_hex(0x000004), // MIDNIGHT_BLACK
-            from_hex(0x0C0927), // DEEP_NAVY
-            from_hex(0x231151), // DARK_INDIGO
-            from_hex(0x410F75), // ROYAL_PURPLE
-            from_hex(0x5F187F), // PLUM
-            from_hex(0x7B2382), // VIOLET
-            from_hex(0x982D80), // MAUVE
-            from_hex(0xB63679), // CRIMSON
-            from_hex(0xD3436E), // RUBY_RED
-            from_hex(0xEB5760), // SCARLET
-            from_hex(0xF8765C), // SUNSET_ORANGE
-            from_hex(0xFD9A6A), // CORAL
-            from_hex(0xFEBF84), // PEACH
-            from_hex(0xFDDC9E), // APRICOT
-            from_hex(0xFCF2B0), // LIGHT_GOLD
-            from_hex(0xFCFDBF), // PALE_YELLOW
+            from_hex(0x030412), from_hex(0xD95269), from_hex(0x000004),
+            from_hex(0x0C0927), from_hex(0x231151), from_hex(0x410F75),
+            from_hex(0x5F187F), from_hex(0x7B2382), from_hex(0x982D80),
+            from_hex(0xB63679), from_hex(0xD3436E), from_hex(0xEB5760),
+            from_hex(0xF8765C), from_hex(0xFD9A6A), from_hex(0xFEBF84),
+            from_hex(0xFDDC9E), from_hex(0xFCF2B0), from_hex(0xFCFDBF),
         ],
     }
 }

@@ -1,5 +1,5 @@
 use crossterm::event::{Event, KeyCode, KeyEventKind, MouseEventKind, MouseEvent};
-use ratatui::layout::Rect;
+use ratatui::layout::{Rect, Direction};
 use crate::color::Palette;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -8,57 +8,29 @@ pub enum FractalType {
     BurningShip,
 }
 
-/// App holds the state of our application.
-pub struct App {
+#[derive(Clone)]
+pub struct FractalPane {
+    pub id: usize,
     pub center_x: f64,
     pub center_y: f64,
-    /// Scale now represents the vertical height of the viewport
     pub scale: f64,
-    pub should_quit: bool,
     pub palette: Palette,
     pub fractal_type: FractalType,
     pub max_iters: u32,
-    pub canvas_area: Rect,
+    pub area: Rect,
 }
 
-impl App {
-    pub fn new() -> Self {
+impl FractalPane {
+    pub fn new(id: usize) -> Self {
         Self {
+            id,
             center_x: -0.75,
             center_y: 0.0,
             scale: 3.0,
-            should_quit: false,
             palette: Palette::Classic,
             fractal_type: FractalType::Mandelbrot,
             max_iters: 112,
-            canvas_area: Rect::default(),
-        }
-    }
-
-    pub fn toggle_palette(&mut self) {
-        self.palette = match self.palette {
-            Palette::Classic => Palette::Rainbow,
-            Palette::Rainbow => Palette::Magma,
-            Palette::Magma => Palette::Classic,
-        };
-    }
-
-    pub fn toggle_fractal_type(&mut self) {
-        self.fractal_type = match self.fractal_type {
-            FractalType::Mandelbrot => FractalType::BurningShip,
-            FractalType::BurningShip => FractalType::Mandelbrot,
-        };
-    }
-
-    pub fn handle_event(&mut self, event: Event) {
-        match event {
-            Event::Key(key) if key.kind == KeyEventKind::Press => {
-                self.on_key(key.code);
-            }
-            Event::Mouse(mouse) => {
-                self.on_mouse(mouse);
-            }
-            _ => {}
+            area: Rect::default(),
         }
     }
 
@@ -67,7 +39,6 @@ impl App {
         let zoom_factor = 0.9;
 
         match key {
-            KeyCode::Char('q') | KeyCode::Esc => self.should_quit = true,
             KeyCode::Left => self.center_x -= move_amount,
             KeyCode::Right => self.center_x += move_amount,
             KeyCode::Up => self.center_y += move_amount,
@@ -89,7 +60,7 @@ impl App {
     }
 
     fn on_mouse(&mut self, mouse: MouseEvent) {
-        let area = self.canvas_area;
+        let area = self.area;
         let x = mouse.column;
         let y = mouse.row;
 
@@ -97,27 +68,20 @@ impl App {
             return;
         }
 
-        // We must calculate the aspect ratio here as well to map clicks correctly
         let aspect_ratio = area.width as f64 / (area.height as f64 * 2.0).max(1.0);
-        let math_height = self.scale;
         let math_width = self.scale * aspect_ratio;
 
         let norm_x = (x as f64 - area.left() as f64) / area.width as f64;
         let norm_y = (y as f64 - area.top() as f64) / area.height as f64;
 
-        // Use the aspect-corrected width for X coordinate calculation
         let mouse_world_x = (self.center_x - math_width / 2.0) + norm_x * math_width;
-        let mouse_world_y = (self.center_y + math_height / 2.0) - norm_y * math_height;
+        let mouse_world_y = (self.center_y + self.scale / 2.0) - norm_y * self.scale;
 
         match mouse.kind {
             MouseEventKind::ScrollUp => {
                 let new_scale = self.scale * 0.90;
                 if new_scale < 1.0e-14 { return; }
-
-                // Recalculate Width for the NEW scale
                 let new_width = new_scale * aspect_ratio;
-
-                // Adjust center based on new dimensions
                 self.center_x = mouse_world_x - (norm_x - 0.5) * new_width;
                 self.center_y = mouse_world_y - (0.5 - norm_y) * new_scale;
                 self.scale = new_scale;
@@ -125,10 +89,197 @@ impl App {
             MouseEventKind::ScrollDown => {
                 let new_scale = self.scale * 1.10;
                 let new_width = new_scale * aspect_ratio;
-
                 self.center_x = mouse_world_x - (norm_x - 0.5) * new_width;
                 self.center_y = mouse_world_y - (0.5 - norm_y) * new_scale;
                 self.scale = new_scale;
+            }
+            _ => {}
+        }
+    }
+
+    pub fn toggle_palette(&mut self) {
+        self.palette = match self.palette {
+            Palette::Classic => Palette::Rainbow,
+            Palette::Rainbow => Palette::Magma,
+            Palette::Magma => Palette::Classic,
+        };
+    }
+
+    pub fn toggle_fractal_type(&mut self) {
+        self.fractal_type = match self.fractal_type {
+            FractalType::Mandelbrot => FractalType::BurningShip,
+            FractalType::BurningShip => FractalType::Mandelbrot,
+        };
+    }
+}
+
+pub enum PaneNode {
+    Pane(FractalPane),
+    Split {
+        direction: Direction,
+        children: Vec<PaneNode>,
+    },
+}
+
+pub struct App {
+    pub root: PaneNode,
+    pub active_pane_id: usize,
+    pub next_id: usize,
+    pub should_quit: bool,
+}
+
+impl App {
+    pub fn new() -> Self {
+        Self {
+            root: PaneNode::Pane(FractalPane::new(0)),
+            active_pane_id: 0,
+            next_id: 1,
+            should_quit: false,
+        }
+    }
+
+    fn send_key_to_active(&mut self, key: KeyCode) {
+        Self::traverse_and_handle_key(&mut self.root, self.active_pane_id, key);
+    }
+
+    fn traverse_and_handle_key(node: &mut PaneNode, target_id: usize, key: KeyCode) {
+        match node {
+            PaneNode::Pane(p) => {
+                if p.id == target_id {
+                    p.on_key(key);
+                }
+            }
+            PaneNode::Split { children, .. } => {
+                for child in children {
+                    Self::traverse_and_handle_key(child, target_id, key);
+                }
+            }
+        }
+    }
+
+    fn split_active(&mut self, direction: Direction, prepend: bool) {
+        let new_id = self.next_id;
+        self.next_id += 1;
+        let new_pane = FractalPane::new(new_id);
+
+        if Self::recursive_split(&mut self.root, self.active_pane_id, direction, prepend, new_pane) {
+            self.active_pane_id = new_id;
+        }
+    }
+
+    fn recursive_split(node: &mut PaneNode, target_id: usize, direction: Direction, prepend: bool, new_pane: FractalPane) -> bool {
+        match node {
+            PaneNode::Pane(p) => {
+                if p.id == target_id {
+                    let current_pane = p.clone();
+                    let new_leaf = PaneNode::Pane(new_pane);
+                    let current_leaf = PaneNode::Pane(current_pane);
+
+                    let children = if prepend {
+                        vec![new_leaf, current_leaf]
+                    } else {
+                        vec![current_leaf, new_leaf]
+                    };
+
+                    *node = PaneNode::Split { direction, children };
+                    return true;
+                }
+                false
+            }
+            PaneNode::Split { children, .. } => {
+                for child in children {
+                    if Self::recursive_split(child, target_id, direction, prepend, new_pane.clone()) {
+                        return true;
+                    }
+                }
+                false
+            }
+        }
+    }
+
+    fn cycle_focus(&mut self) {
+        let mut ids = Vec::new();
+        Self::collect_ids(&self.root, &mut ids);
+
+        if let Some(pos) = ids.iter().position(|&id| id == self.active_pane_id) {
+            let next_pos = (pos + 1) % ids.len();
+            self.active_pane_id = ids[next_pos];
+        }
+    }
+
+    fn collect_ids(node: &PaneNode, ids: &mut Vec<usize>) {
+        match node {
+            PaneNode::Pane(p) => ids.push(p.id),
+            PaneNode::Split { children, .. } => {
+                for child in children {
+                    Self::collect_ids(child, ids);
+                }
+            }
+        }
+    }
+
+    fn find_pane_at(&self, col: u16, row: u16) -> Option<usize> {
+        Self::recursive_find_at(&self.root, col, row)
+    }
+
+    fn recursive_find_at(node: &PaneNode, col: u16, row: u16) -> Option<usize> {
+        match node {
+            PaneNode::Pane(p) => {
+                let area = p.area;
+                if col >= area.left() && col < area.right() && row >= area.top() && row < area.bottom() {
+                    Some(p.id)
+                } else {
+                    None
+                }
+            }
+            PaneNode::Split { children, .. } => {
+                for child in children {
+                    if let Some(id) = Self::recursive_find_at(child, col, row) {
+                        return Some(id);
+                    }
+                }
+                None
+            }
+        }
+    }
+
+    fn pass_mouse_to_active(&mut self, mouse: MouseEvent) {
+        Self::recursive_mouse(&mut self.root, self.active_pane_id, mouse);
+    }
+
+    fn recursive_mouse(node: &mut PaneNode, target_id: usize, mouse: MouseEvent) {
+        match node {
+            PaneNode::Pane(p) => {
+                if p.id == target_id {
+                    p.on_mouse(mouse);
+                }
+            }
+            PaneNode::Split { children, .. } => {
+                for child in children {
+                    Self::recursive_mouse(child, target_id, mouse);
+                }
+            }
+        }
+    }
+
+    pub fn handle_event(&mut self, event: Event) {
+        match event {
+            Event::Key(key) if key.kind == KeyEventKind::Press => {
+                match key.code {
+                    KeyCode::Char('q') | KeyCode::Esc => self.should_quit = true,
+                    KeyCode::Char('D') => self.split_active(Direction::Vertical, false),
+                    KeyCode::Char('U') => self.split_active(Direction::Vertical, true),
+                    KeyCode::Char('R') => self.split_active(Direction::Horizontal, false),
+                    KeyCode::Char('L') => self.split_active(Direction::Horizontal, true),
+                    KeyCode::Tab => self.cycle_focus(),
+                    _ => self.send_key_to_active(key.code),
+                }
+            }
+            Event::Mouse(mouse) => {
+                if let Some(id) = self.find_pane_at(mouse.column, mouse.row) {
+                    self.active_pane_id = id;
+                    self.pass_mouse_to_active(mouse);
+                }
             }
             _ => {}
         }
