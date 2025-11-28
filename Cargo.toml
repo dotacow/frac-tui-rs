@@ -1,0 +1,20 @@
+[package]
+name = "simple"
+version = "0.1.0"
+description = "a practice tui for ratatui"
+authors = ["dotacow <ykitaneh22@gmail.com>"]
+license = "MIT"
+edition = "2024"
+
+[dependencies]
+ratatui = "0.29.0"
+color-eyre = "0.6.3"
+crossterm = "0.29.0"
+rayon = "1.10.0"
+
+# Read the optimization guideline for more details: https://ratatui.rs/recipes/apps/release-your-app/#optimizations
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
