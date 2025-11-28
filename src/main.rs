@@ -16,19 +16,15 @@ use crate::hooks::App;
 use crate::ui::ui;
 
 fn main() -> io::Result<()> {
-    // 1. Setup Terminal
     enable_raw_mode()?;
     let mut stdout = stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // 2. Initialize App State
     let mut app = App::new();
 
-    // 3. Main Loop
     loop {
-        // Pass &mut app so we can update the canvas_area during render
         terminal.draw(|f| ui(f, &mut app))?;
 
         let event = event::read()?;
@@ -39,7 +35,6 @@ fn main() -> io::Result<()> {
         }
     }
 
-    // 4. Cleanup Terminal
     disable_raw_mode()?;
     execute!(
         terminal.backend_mut(),

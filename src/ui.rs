@@ -16,7 +16,7 @@ pub fn ui(f: &mut Frame, app: &mut App) {
         ])
         .split(f.area());
 
-    let header_text = "Shift+{u,d,l,r}: Split Pane | Tab: Cycle | Alt+{1..9}: Switch | Click: Focus | Q: Quit";
+    let header_text = "Shift+{u,d,l,r}: Split Pane | Tab: Cycle | {1..9}: Switch | r: Reset | Click: Focus | Q: Quit";
 
     let header = Paragraph::new(header_text)
         .block(Block::default().borders(Borders::ALL).title("Tiling Fractal Manager"))
@@ -64,7 +64,6 @@ fn draw_tree(f: &mut Frame, node: &mut PaneNode, area: Rect, active_id: usize) {
             let p_type = pane.fractal_type;
             let p_iters = pane.max_iters;
 
-            // Updated Title Format: "1: [Mandelbrot, 112, Classic]"
             let title = format!("{}: [{:?}, {}, {:?}]", pane.id + 1, p_type, p_iters, p_palette);
 
             let canvas = Canvas::default()
