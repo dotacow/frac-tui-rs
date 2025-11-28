@@ -1,4 +1,4 @@
-use crossterm::event::{Event, KeyCode, KeyEventKind, MouseEventKind, MouseEvent};
+use crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers, MouseEvent, MouseEventKind};
 use ratatui::layout::{Rect, Direction};
 use crate::color::Palette;
 
@@ -218,6 +218,13 @@ impl App {
         }
     }
 
+    /// Check if a pane with the given ID exists in the tree
+    fn pane_exists(&self, target_id: usize) -> bool {
+        let mut ids = Vec::new();
+        Self::collect_ids(&self.root, &mut ids);
+        ids.contains(&target_id)
+    }
+
     fn find_pane_at(&self, col: u16, row: u16) -> Option<usize> {
         Self::recursive_find_at(&self.root, col, row)
     }
@@ -265,6 +272,23 @@ impl App {
     pub fn handle_event(&mut self, event: Event) {
         match event {
             Event::Key(key) if key.kind == KeyEventKind::Press => {
+                // Handle Alt + Number (1-9) for direct window switching
+                if key.modifiers.contains(KeyModifiers::ALT) {
+                    if let KeyCode::Char(c) = key.code {
+                        if let Some(digit) = c.to_digit(10) {
+                            if digit > 0 {
+                                // Map '1' to ID 0, '2' to ID 1, etc.
+                                let target_id = (digit - 1) as usize;
+                                if self.pane_exists(target_id) {
+                                    self.active_pane_id = target_id;
+                                }
+                            }
+                            // Return early if Alt+Num was pressed to avoid other handlers
+                            return;
+                        }
+                    }
+                }
+
                 match key.code {
                     KeyCode::Char('q') | KeyCode::Esc => self.should_quit = true,
                     KeyCode::Char('D') => self.split_active(Direction::Vertical, false),
