@@ -76,8 +76,6 @@ rayon is used to parallelize the pixel calculation. Each worker computes a subse
 
 ## **License**
 
-Copyright (c) yousef K [ykitaneh22@gmail.com](mailto:ykitaneh22@gmail.com)
-
 This project is licensed under the MIT license. See LICENSE for details.
 
 ## **Links & Credits**
