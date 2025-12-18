@@ -19,17 +19,16 @@ A high-performance, multithreaded TUI (Terminal User Interface) fractal explorer
 
 ## **Installation**
 
-Ensure you have Rust and Cargo installed. For best performance, build and run in release mode:
+Ensure you have Rust and Cargo installed. For best performance build and run in release mode:
 
-\# Clone the repository
+```bash
 git clone https://github.com/dotacow/frac-tui-rs
 cd frac-tui-rs
-
-\# Build and run in release mode (recommended)
-cargo run \--release
-
-**Note:** Debug builds are significantly slower due to heavy numerical calculations.
-
+```
+run as any standard rust project:
+```bash
+cargo run --release
+```
 ## **Controls**
 
 ### **Window Management**
