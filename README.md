@@ -31,19 +31,15 @@ cargo run --release
 ```
 ## **Controls**
 
+* **h**: shortcut glossary
 ### **Window Management**
-
-* **Shift \+ U**: Split active pane **Up**
-* **Shift \+ D**: Split active pane **Down**
-* **Shift \+ L**: Split active pane **Left**
-* **Shift \+ R**: Split active pane **Right**
+* **Shift \+ {l,r,u,d}**: Split active pane left/right/up/down
 * **Shift \+ X**: Close active pane
 * **Tab**: Cycle focus between panes
 * **1-9**: Instantly switch focus to pane \#1–9
 * **Mouse Click**: Focus specific pane
 
 ### **Fractal Navigation (Active Pane)**
-
 * **Arrow keys**: Pan the view
 * **Mouse wheel**: Zoom in/out relative to cursor
 * **\+ / \-**: Zoom in/out (center-focused)
@@ -51,8 +47,8 @@ cargo run --release
 
 ### **Simulation Settings**
 
-* **Space**: Cycle color palettes (Classic → Rainbow → Magma)
-* **b**: Switch fractal mode (Mandelbrot ↔ Burning Ship)
+* **Space**: Cycle color palettes (Classic, Rainbow, Magma)
+* **b**: Switch fractal mode (Mandelbrot - Burning Ship, Julia)
 * **d**: Increase max iterations (more detail)
 * **s**: Decrease max iterations (faster rendering)
 

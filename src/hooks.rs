@@ -8,6 +8,13 @@ const MAX_ITER_DEFAULT: u32 = 1100;
 pub enum FractalType {
     Mandelbrot,
     BurningShip,
+    Julia,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum InputField {
+    Cx,
+    Cy,
 }
 
 #[derive(Clone)]
@@ -20,6 +27,10 @@ pub struct FractalPane {
     pub fractal_type: FractalType,
     pub max_iters: u32,
     pub area: Rect,
+    pub julia_cx: f64,
+    pub julia_cy: f64,
+    pub active_input: Option<InputField>,
+    pub input_buffer: String,
 }
 
 impl FractalPane {
@@ -33,10 +44,41 @@ impl FractalPane {
             fractal_type: FractalType::Mandelbrot,
             max_iters: MAX_ITER_DEFAULT,
             area: Rect::default(),
+            julia_cx: -0.5125,
+            julia_cy: 0.5213,
+            active_input: None,
+            input_buffer: String::new(),
         }
     }
 
     fn on_key(&mut self, key: KeyCode) {
+        if let Some(field) = self.active_input {
+            match key {
+                KeyCode::Char(c) if c.is_ascii_digit() || c == '.' || c == '-' => {
+                    self.input_buffer.push(c);
+                }
+                KeyCode::Backspace => {
+                    self.input_buffer.pop();
+                }
+                KeyCode::Enter => {
+                    if let Ok(val) = self.input_buffer.parse::<f64>() {
+                        match field {
+                            InputField::Cx => self.julia_cx = val,
+                            InputField::Cy => self.julia_cy = val,
+                        }
+                    }
+                    self.active_input = None;
+                    self.input_buffer.clear();
+                }
+                KeyCode::Esc => {
+                    self.active_input = None;
+                    self.input_buffer.clear();
+                }
+                _ => {}
+            }
+            return;
+        }
+
         let move_amount = self.scale * 0.1;
         let zoom_factor = 0.9;
 
@@ -52,6 +94,10 @@ impl FractalPane {
                 self.center_y = 0.0;
                 self.scale = 3.0;
                 self.max_iters = MAX_ITER_DEFAULT;
+                self.julia_cx = -0.5125;
+                self.julia_cy = 0.5213;
+                self.active_input = None;
+                self.input_buffer.clear();
             }
             KeyCode::Char(' ') => self.toggle_palette(),
             KeyCode::Char('b') => self.toggle_fractal_type(),
@@ -68,6 +114,23 @@ impl FractalPane {
 
         if x < area.left() || x >= area.right() || y < area.top() || y >= area.bottom() {
             return;
+        }
+
+        if self.fractal_type == FractalType::Julia {
+            // Inputs at bottom-3 (Cx) and bottom-2 (Cy)
+            let bottom = area.bottom();
+            let cx_y = bottom.saturating_sub(3);
+            let cy_y = bottom.saturating_sub(2);
+
+            if y == cx_y || y == cy_y {
+                let field = if y == cx_y { InputField::Cx } else { InputField::Cy };
+
+                if let MouseEventKind::Down(_) = mouse.kind {
+                    self.active_input = Some(field);
+                    self.input_buffer.clear();
+                }
+                return;
+            }
         }
 
         let aspect_ratio = area.width as f64 / (area.height as f64 * 2.0).max(1.0);
@@ -110,7 +173,8 @@ impl FractalPane {
     pub fn toggle_fractal_type(&mut self) {
         self.fractal_type = match self.fractal_type {
             FractalType::Mandelbrot => FractalType::BurningShip,
-            FractalType::BurningShip => FractalType::Mandelbrot,
+            FractalType::BurningShip => FractalType::Julia,
+            FractalType::Julia => FractalType::Mandelbrot,
         };
     }
 }
@@ -129,6 +193,7 @@ pub struct App {
     pub next_id: usize,
     pub should_quit: bool,
     pub show_quit_popup: bool,
+    pub show_help_popup: bool,
 }
 
 impl App {
@@ -139,6 +204,7 @@ impl App {
             next_id: 1,
             should_quit: false,
             show_quit_popup: false,
+            show_help_popup: false,
         }
     }
 
@@ -325,6 +391,19 @@ impl App {
         }
     }
 
+    fn is_active_pane_capturing_input(&self) -> bool {
+        Self::recursive_is_capturing(&self.root, self.active_pane_id)
+    }
+
+    fn recursive_is_capturing(node: &PaneNode, target_id: usize) -> bool {
+        match node {
+            PaneNode::Pane(p) => p.id == target_id && p.active_input.is_some(),
+            PaneNode::Split { children, .. } => {
+                children.iter().any(|child| Self::recursive_is_capturing(child, target_id))
+            }
+        }
+    }
+
     pub fn handle_event(&mut self, event: Event) {
         match event {
             Event::Key(key) if key.kind == KeyEventKind::Press => {
@@ -339,6 +418,20 @@ impl App {
                         }
                         _ => {}
                     }
+                    return;
+                }
+
+                if self.show_help_popup {
+                    if let KeyCode::Esc | KeyCode::Char('h') | KeyCode::Char('q') = key.code {
+                        self.show_help_popup = false;
+                    }
+                    return;
+                }
+
+                // If capturing input, pass everything to active pane except maybe global quit?
+                // Actually, let's just prioritize the active pane for everything if it's capturing input.
+                if self.is_active_pane_capturing_input() {
+                    self.send_key_to_active(key.code);
                     return;
                 }
 
@@ -361,6 +454,7 @@ impl App {
 
                 match key.code {
                     KeyCode::Char('q') | KeyCode::Esc => self.show_quit_popup = true,
+                    KeyCode::Char('h') => self.show_help_popup = true,
                     KeyCode::Char('D') => self.split_active(Direction::Vertical, false),
                     KeyCode::Char('U') => self.split_active(Direction::Vertical, true),
                     KeyCode::Char('R') => self.split_active(Direction::Horizontal, false),
@@ -371,7 +465,7 @@ impl App {
                 }
             }
             Event::Mouse(mouse) => {
-                if self.show_quit_popup { return; }
+                if self.show_quit_popup || self.show_help_popup { return; }
 
                 if let Some(id) = self.find_pane_at(mouse.column, mouse.row) {
                     match mouse.kind {

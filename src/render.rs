@@ -2,7 +2,7 @@ use ratatui::widgets::canvas::Context;
 use ratatui::layout::Rect;
 use rayon::prelude::*;
 use crate::color::{Palette, get_palette_colors};
-use crate::utils::{calculate_mandelbrot, calculate_burning_ship};
+use crate::utils::{calculate_mandelbrot, calculate_burning_ship, calculate_julia};
 use crate::hooks::FractalType;
 
 pub fn draw_fractal(
@@ -15,6 +15,8 @@ pub fn draw_fractal(
     fractal_type: FractalType,
     max_iters: u32,
     area: Rect,
+    julia_cx: f64,
+    julia_cy: f64,
 ) {
     let width = right - left;
     let height = top - bottom;
@@ -38,6 +40,7 @@ pub fn draw_fractal(
                     let iterations = match fractal_type {
                         FractalType::Mandelbrot => calculate_mandelbrot(x, y, max_iters),
                         FractalType::BurningShip => calculate_burning_ship(x, y, max_iters),
+                        FractalType::Julia => calculate_julia(x, y, julia_cx, julia_cy, max_iters),
                     };
 
                     if iterations < max_iters {

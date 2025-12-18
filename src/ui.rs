@@ -2,9 +2,9 @@ use ratatui::{
     prelude::*,
     symbols::Marker,
     widgets::canvas::Canvas,
-    widgets::{Block, Borders, Paragraph, Clear},
+    widgets::{Block, Borders, Paragraph, Clear, Table, Row},
 };
-use crate::hooks::{App, PaneNode};
+use crate::hooks::{App, PaneNode, FractalType, InputField};
 use crate::render::draw_fractal;
 
 pub fn ui(f: &mut Frame, app: &mut App) {
@@ -16,7 +16,7 @@ pub fn ui(f: &mut Frame, app: &mut App) {
         ])
         .split(f.area());
 
-    let header_text = "Shift+{u,d,l,r}: Split Pane | Shift+x: Close Pane | Tab: Cycle | {1..9}: Switch | r: Reset | Click: Focus | Q: Quit";
+    let header_text = "Shift+{u,d,l,r}: Split Pane | Shift+x: Close Pane | Tab: Cycle | {1..9}: Switch | r: Reset | Click: Focus | h: Help | Q: Quit";
 
     let header = Paragraph::new(header_text)
         .block(Block::default().borders(Borders::ALL).title("Frac-tui"))
@@ -26,6 +26,35 @@ pub fn ui(f: &mut Frame, app: &mut App) {
 
     let mut pane_counter = 1;
     draw_tree(f, &mut app.root, main_layout[1], app.active_pane_id, &mut pane_counter);
+
+    if app.show_help_popup {
+        let popup_area = centered_rect(60, 60, f.area());
+
+        let rows = vec![
+            Row::new(vec!["Key", "Action"]),
+            Row::new(vec!["Arrow Keys", "Pan view"]),
+            Row::new(vec!["Mouse Wheel", "Zoom in/out (cursor)"]),
+            Row::new(vec!["+/-", "Zoom in/out (center)"]),
+            Row::new(vec!["Space", "Cycle Palette"]),
+            Row::new(vec!["b", "Cycle Fractal Type"]),
+            Row::new(vec!["d/s", "Increase/Decrease Iterations"]),
+            Row::new(vec!["r", "Reset View"]),
+            Row::new(vec!["Shift + Arrow", "Split Pane (Direction)"]),
+            Row::new(vec!["Shift + x", "Close Active Pane"]),
+            Row::new(vec!["Tab", "Cycle Focus"]),
+            Row::new(vec!["1-9", "Switch Focus to Pane #"]),
+            Row::new(vec!["h", "Toggle Help"]),
+            Row::new(vec!["q / Esc", "Quit"]),
+        ];
+
+        let table = Table::new(rows, [Constraint::Percentage(30), Constraint::Percentage(70)])
+            .block(Block::default().title(" Help ").borders(Borders::ALL))
+            .header(Row::new(vec!["Key", "Action"]).style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)))
+            .column_spacing(1);
+
+        f.render_widget(Clear, popup_area);
+        f.render_widget(table, popup_area);
+    }
 
     if app.show_quit_popup {
         let popup_area = centered_rect(60, 20, f.area());
@@ -101,6 +130,8 @@ fn draw_tree(f: &mut Frame, node: &mut PaneNode, area: Rect, active_id: usize, p
             let p_palette = pane.palette;
             let p_type = pane.fractal_type;
             let p_iters = pane.max_iters;
+            let p_julia_cx = pane.julia_cx;
+            let p_julia_cy = pane.julia_cy;
 
             let display_id = *pane_counter;
             *pane_counter += 1;
@@ -118,10 +149,58 @@ fn draw_tree(f: &mut Frame, node: &mut PaneNode, area: Rect, active_id: usize, p
                 .x_bounds([x_left, x_right])
                 .y_bounds([y_bottom, y_top])
                 .paint(move |ctx| {
-                    draw_fractal(ctx, x_left, x_right, y_bottom, y_top, p_palette, p_type, p_iters, area);
+                    draw_fractal(ctx, x_left, x_right, y_bottom, y_top, p_palette, p_type, p_iters, area, p_julia_cx, p_julia_cy);
                 });
 
             f.render_widget(canvas, area);
+
+            if p_type == FractalType::Julia {
+                let cx_area = Rect {
+                    x: area.x + 1,
+                    y: area.bottom().saturating_sub(3),
+                    width: area.width.saturating_sub(2),
+                    height: 1,
+                };
+                let cy_area = Rect {
+                    x: area.x + 1,
+                    y: area.bottom().saturating_sub(2),
+                    width: area.width.saturating_sub(2),
+                    height: 1,
+                };
+
+                let cx_text = if pane.active_input == Some(InputField::Cx) {
+                    format!("Cx: {}_", pane.input_buffer)
+                } else {
+                    format!("Cx: {:.4}", pane.julia_cx)
+                };
+
+                let cy_text = if pane.active_input == Some(InputField::Cy) {
+                    format!("Cy: {}_i", pane.input_buffer)
+                } else {
+                    format!("Cy: {:.4}", pane.julia_cy)
+                };
+
+                let cx_style = if pane.active_input == Some(InputField::Cx) {
+                    Style::default().fg(Color::Yellow).bg(Color::DarkGray)
+                } else {
+                    Style::default().fg(Color::Yellow)
+                };
+
+                let cy_style = if pane.active_input == Some(InputField::Cy) {
+                    Style::default().fg(Color::Yellow).bg(Color::DarkGray)
+                } else {
+                    Style::default().fg(Color::Yellow)
+                };
+
+                let cx_widget = Paragraph::new(cx_text).style(cx_style);
+                let cy_widget = Paragraph::new(cy_text).style(cy_style);
+
+                f.render_widget(Clear, cx_area);
+                f.render_widget(cx_widget, cx_area);
+
+                f.render_widget(Clear, cy_area);
+                f.render_widget(cy_widget, cy_area);
+            }
         }
         PaneNode::Split { direction, children } => {
             if children.is_empty() { return; }
