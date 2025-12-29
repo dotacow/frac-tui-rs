@@ -1,0 +1,12 @@
+services:
+  frac-tui:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+
+    image: frac-tui-rs:latest
+    container_name: frac-tui-container
+
+    #configs interactive session.
+    stdin_open: true
+    tty: true
