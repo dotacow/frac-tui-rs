@@ -4,17 +4,17 @@ A high-performance, multithreaded TUI (Terminal User Interface) fractal explorer
 
 ![coolandsickfractaltui](frac-tui.png)
 
-![secondcoolfractal](ex2.png) ![ex3](ex3.png)
+![secondcoolfractal](ex2.png) ![whyareyoulookingatmetedata](ex3.png)
 ## **Features**
 
-* **Tiling Window Manager**: Split the screen horizontally or vertically (Tmux-style) to view multiple fractals at once.
-* **High resolution**: Uses Braille markers (2×4 dots per character) for detailed rendering.
-* **Multithreaded**: Uses rayon to compute the fractal in parallel across CPU cores.
+* **Tiling Window Manager**: Split the screen horizontally or vertically (inspired by tillix) to view multiple fractals at once.
+* **ascii art-like**: Uses Braille markers (2×4 dots per character) for rendering.
+* **gpu-enabled**: Uses rayon to achieve fast performance.
 * **Independent Simulations**: Each pane has its own state (zoom, position, palette, fractal type, iteration limit).
 * **Interactive controls**: Smooth panning and zooming (keyboard \+ mouse) with mouse focus support.
 * **Dynamic resolution**: Adjusts calculation density automatically when the terminal or pane resizes.
 * **Aspect ratio correction**: Maintains a 1:1 mathematical aspect ratio regardless of pane shape.
-* **Multiple fractals**: Toggle between Mandelbrot and Burning Ship.
+* **Multiple fractals**: Toggle between Mandelbrot,Burning Ship, and julia fractals.
 * **Color palettes**: Classic, Rainbow, and Magma themes.
 
 ## **Installation**
@@ -25,6 +25,7 @@ if you have rust installed, simply clone the repository:
 git clone https://github.com/dotacow/frac-tui-rs
 cd frac-tui-rs
 ```
+
 run as any standard rust project:
 ```bash
 cargo run --release
@@ -33,6 +34,11 @@ cargo run --release
 there is also a docker setup for easy usage without rust installed. see the Makefile and docker/docker-compose.yaml for details. basic usage:
 ```bash
 make run
+```
+
+if you didn't add your user to the docker group, you will need to run with sudo:
+```bash
+sudo make run
 ```
 
 ## **Controls**
@@ -71,7 +77,7 @@ The application uses a **recursive tree structure** (PaneNode) to manage layout.
 
 ### **Rendering strategy**
 
-The app uses the Ratatui Canvas widget and renders using Braille characters. To optimize performance, the renderer calculates the required density based on the specific Rect area of the active pane:
+The app uses the Ratatui Canvas widget and renders using Braille characters. To avoid stretched images, the renderer calculates the required density based on the specific Rect area of the active pane:
 
 * Width density: pane\_width \* 2
 * Height density: pane\_height \* 4
