@@ -10,11 +10,8 @@ help:
 run: ## Build and run interactively (if unsure run this)
 	docker compose -f $(COMPOSE_FILE) run --rm $(SERVICE_NAME)
 
-up: ## Start the container in the background
-	docker compose -f $(COMPOSE_FILE) up
-
-down: ## stop daemon containers
-	docker compose -f $(COMPOSE_FILE) down
+build: ## Build the Docker image
+	docker compose -f $(COMPOSE_FILE) build
 
 clean: ## Remove images and containers
 	docker compose -f $(COMPOSE_FILE) down --rmi local

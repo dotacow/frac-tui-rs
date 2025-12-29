@@ -19,8 +19,8 @@ A high-performance, multithreaded TUI (Terminal User Interface) fractal explorer
 
 ## **Installation**
 
-Ensure you have Rust and Cargo installed. For best performance build and run in release mode:
 
+if you have rust installed, simply clone the repository:
 ```bash
 git clone https://github.com/dotacow/frac-tui-rs
 cd frac-tui-rs
@@ -29,6 +29,12 @@ run as any standard rust project:
 ```bash
 cargo run --release
 ```
+
+there is also a docker setup for easy usage without rust installed. see the Makefile and docker/docker-compose.yaml for details. basic usage:
+```bash
+make run
+```
+
 ## **Controls**
 
 * **h**: shortcut glossary

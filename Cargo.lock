@@ -293,6 +293,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
+name = "frac-tui-rs"
+version = "0.1.0"
+dependencies = [
+ "color-eyre",
+ "crossterm 0.29.0",
+ "ratatui",
+ "rayon",
+]
+
+[[package]]
 name = "gimli"
 version = "0.32.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -656,16 +666,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7664a098b8e616bdfcc2dc0e9ac44eb231eedf41db4e9fe95d8d32ec728dedad"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "simple"
-version = "0.1.0"
-dependencies = [
- "color-eyre",
- "crossterm 0.29.0",
- "ratatui",
- "rayon",
 ]
 
 [[package]]

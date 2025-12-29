@@ -1,10 +1,10 @@
 [package]
-name = "simple"
+name = "frac-tui-rs"
 version = "0.1.0"
 description = "a practice tui for ratatui"
-authors = ["dotacow <ykitaneh22@gmail.com>"]
+authors = ["dotacow"]
 license = "MIT"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 ratatui = "0.29.0"
