@@ -9,7 +9,7 @@ A high-performance, multithreaded TUI (Terminal User Interface) fractal explorer
 
 * **Tiling Window Manager**: Split the screen horizontally or vertically (inspired by tillix) to view multiple fractals at once.
 * **ascii art-like**: Uses Braille markers (2×4 dots per character) for rendering.
-* **gpu-enabled**: Uses rayon to achieve fast performance.
+* **Parallelized**: Uses rayon to achieve fast performance.
 * **Independent Simulations**: Each pane has its own state (zoom, position, palette, fractal type, iteration limit).
 * **Interactive controls**: Smooth panning and zooming (keyboard \+ mouse) with mouse focus support.
 * **Dynamic resolution**: Adjusts calculation density automatically when the terminal or pane resizes.
